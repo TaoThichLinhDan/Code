@@ -1,24 +1,22 @@
--- Thay thế đoạn load thư viện cũ bằng đoạn này:
+-- [[ ĐỢI GAME VÀ NHÂN VẬT LOAD HOÀN TOÀN ĐỂ TRÁNH LỖI NGẦM TRÊN DELTA ]] --
+if not game:IsLoaded() then game.Loaded:Wait() end
+repeat task.wait() until game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Character
+
+-- [[ TẢI THƯ VIỆN UI FLUENT PHIÊN BẢN MASTER DÀNH CHO MOBILE ]] --
 local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua"))()
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 
 -- [[ DATVNMC HUB - QUANTUM ONYX STYLE EDITION 2026 ]] --
-
 local DatVNMC_ImageID = "rbxassetid://108529748091064"
 
 -- Khởi động thông báo hệ thống kiểu Onyx
 local StarterGui = game:GetService("StarterGui")
 StarterGui:SetCore("SendNotification", {
     Title = "🔮 DatVNMC Onyx 🔮",
-    Text = "QuantumOnyx UI Loaded! NPC Fighting Styles Teleport Added!",
+    Text = "QuantumOnyx UI Loaded! KillAura Dragon Storm Added!",
     Duration = 6
 })
-
--- Tải Thư Viện UI Fluent (Phong cách QuantumOnyx Premium)
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/InterfaceManager.lua"))()
 
 -- Khởi tạo Window QuantumOnyx
 local Window = Fluent:CreateWindow({
@@ -35,6 +33,7 @@ local Window = Fluent:CreateWindow({
 _G.AutoFarmLevel = false
 _G.AutoAttack = false
 _G.BringMob = false
+_G.KillAuraDragonStorm = false -- Biến cấu hình mới
 _G.AntiAFK = true
 
 -- Cấu hình Dungeon & Raid Toggles
@@ -58,6 +57,12 @@ _G.AutoLookMoon = false
 _G.AutoPickupGear = false
 _G.TweenMirage = false
 
+-- Cấu hình Sea Events Toggles
+_G.AutoSeaEvent = false
+_G.AutoAttackSea = false
+_G.AutoSitBoat = false
+_G.FlyToRoughSea = false
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
@@ -74,8 +79,9 @@ local Tabs = {
     Combat = Window:AddTab({ Title = "Combat PvP", Icon = "swords" }),
     ESP = Window:AddTab({ Title = "Hệ Thống ESP", Icon = "eye" }),
     RaceV4 = Window:AddTab({ Title = "Up Tộc V4", Icon = "moon" }),
+    SeaEvent = Window:AddTab({ Title = "Sea Events", Icon = "ship" }),
     Teleport = Window:AddTab({ Title = "Teleport", Icon = "map-pin" }),
-    Misc = Window:AddTab({ Title = "Misc & Shop Võ", Icon = "settings" }) -- Tích hợp shop võ tại đây
+    Misc = Window:AddTab({ Title = "Misc & Shop Võ", Icon = "settings" })
 }
 
 -- ====================================================================
@@ -129,6 +135,7 @@ function ToTween(pos)
     local speed = 300
     local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
     local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, tweenInfo, {CFrame = pos})
+    tween.Completed:Connect(function() end)
     tween:Play()
     return tween
 end
@@ -145,6 +152,12 @@ FarmToggle:OnChanged(function()
     _G.AutoFarmLevel = Fluent.Options.AutoFarmLevel.Value
     _G.AutoAttack = Fluent.Options.AutoFarmLevel.Value
     _G.BringMob = Fluent.Options.AutoFarmLevel.Value
+end)
+
+-- TÍNH NĂNG MỚI ĐƯỢC THÊM VÀO ĐÂY
+local StormToggle = Tabs.Main:AddToggle("KillAuraDragonStorm", {Title = "Kill Aura Dragon Storm (Auto Skill Z)", Default = false})
+StormToggle:OnChanged(function()
+    _G.KillAuraDragonStorm = Fluent.Options.KillAuraDragonStorm.Value
 end)
 
 -- TAB 2: DUNGEON & FRUITS (RAID)
@@ -248,7 +261,24 @@ MoonTgl:OnChanged(function() _G.AutoLookMoon = Fluent.Options.AutoLookMoon.Value
 local GearTgl = Tabs.RaceV4:AddToggle("AutoPickupGear", {Title = "Auto Nhặt Bánh Răng (Gear)", Default = false})
 GearTgl:OnChanged(function() _G.AutoPickupGear = Fluent.Options.AutoPickupGear.Value end)
 
--- TAB 6: TELEPORT WORLD
+
+-- TAB 6: SEA EVENTS
+local SeaSec1 = Tabs.SeaEvent:AddSection("Săn Sự Kiện Biển Cao Cấp")
+
+local SeaEventTgl = Tabs.SeaEvent:AddToggle("AutoSeaEvent", {Title = "Auto Diệt Sea Events (Sea Beasts, Terrorshark...)", Default = false})
+SeaEventTgl:OnChanged(function() _G.AutoSeaEvent = Fluent.Options.AutoSeaEvent.Value end)
+
+local SeaAttackTgl = Tabs.SeaEvent:AddToggle("AutoAttackSea", {Title = "Auto Click Tấn Công Quái Biển", Default = false})
+SeaAttackTgl:OnChanged(function() _G.AutoAttackSea = Fluent.Options.AutoAttackSea.Value end)
+
+local SitBoatTgl = Tabs.SeaEvent:AddToggle("AutoSitBoat", {Title = "Auto Ngồi Ghế Lái Thuyền (Chống Té)", Default = false})
+SitBoatTgl:OnChanged(function() _G.AutoSitBoat = Fluent.Options.AutoSitBoat.Value end)
+
+local FlySeaTgl = Tabs.SeaEvent:AddToggle("FlyToRoughSea", {Title = "Auto Bay Ra Biển Động (Tìm Cấp Độ 6)", Default = false})
+FlySeaTgl:OnChanged(function() _G.FlyToRoughSea = Fluent.Options.FlyToRoughSea.Value end)
+
+
+-- TAB 7: TELEPORT WORLD
 local Sea_Section = Tabs.Teleport:AddSection("Chuyển Đổi Thế Giới")
 
 Tabs.Teleport:AddButton({
@@ -264,9 +294,7 @@ Tabs.Teleport:AddButton({
     Callback = function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelZou") end
 })
 
--- ====================================================================
--- [MỤC CHỨC NĂNG MỚI: DỊCH CHUYỂN ĐẾN NPC SHOP VÕ]
--- ====================================================================
+-- TAB 8: NPC SHOP VÕ
 local FightingStyleSection = Tabs.Misc:AddSection("Shop Võ - Dịch Chuyển Học Võ")
 
 local FightingStyles = {
@@ -300,7 +328,7 @@ Tabs.Misc:AddButton({
     end
 })
 
--- TAB 7: TIỆN ÍCH MISC KHÁC
+-- TIỆN ÍCH MISC KHÁC
 local Lag_Section = Tabs.Misc:AddSection("Tối Ưu & Treo Máy (Lag Fix)")
 
 Tabs.Misc:AddButton({
@@ -341,7 +369,7 @@ WhiteScreenTgl:OnChanged(function(state)
     end
 end)
 
-local Sv_Section = Tabs.Misc:AddSection("Quản Lý Máy Chủ")
+local Sv_Section = Tabs.Misc:AddSection("Quản Lý Máy Server")
 Tabs.Misc:AddButton({
     Title = "Hop Server (Đổi Máy Chủ)",
     Callback = function()
@@ -364,6 +392,21 @@ Tabs.Misc:AddButton({
 -- ====================================================================
 -- [CORE LOGIC ENGINE RUNNING BACKGROUND]
 -- ====================================================================
+
+-- LOGIC AUTO SKILL DRAGON STORM / SKILL AURA ENGINE
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G.KillAuraDragonStorm then
+            pcall(function()
+                -- Kích hoạt phím Z ảo để spam Dragon Storm liên tục
+                VirtualUser:SetKeyDown("z")
+                task.wait(0.1)
+                VirtualUser:SetUpKey("z")
+            end)
+        end
+    end
+end)
 
 function MakeESP(parent, name, color)
     if not parent:FindFirstChild("DatVNMC_ESP_" .. name) then
@@ -406,6 +449,56 @@ if _G.AntiAFK then
         VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
     end)
 end
+
+-- LOGIC AUTO SEA EVENT ENGINE
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        if _G.AutoSeaEvent then
+            pcall(function()
+                local TargetSeaMonster = nil
+                for _, v in pairs(workspace:GetChildren()) do
+                    if (v.Name == "Sea Beast" or v.Name == "Terrortight" or v.Name == "Terrortail" or v.Name == "Terrorshark" or string.find(v.Name, "Ship") or string.find(v.Name, "Shark")) and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                        TargetSeaMonster = v
+                        break
+                    end
+                end
+
+                if TargetSeaMonster then
+                    ToTween(TargetSeaMonster.HumanoidRootPart.CFrame * CFrame.new(0, 35, 0))
+                    
+                    if _G.AutoAttackSea then
+                        VirtualUser:CaptureController()
+                        VirtualUser:ClickButton1(Vector2.new(50, 50))
+                    end
+                else
+                    if _G.FlyToRoughSea then
+                        ToTween(CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position.X + 200, 45, LocalPlayer.Character.HumanoidRootPart.Position.Z + 200))
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- LOGIC AUTO NGỒI GHẾ LÁI
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if _G.AutoSitBoat then
+            pcall(function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") and LocalPlayer.Character.Humanoid.SeatPart == nil then
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if v:IsA("VehicleSeat") and (v.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 25 then
+                            v:Sit(LocalPlayer.Character.Humanoid)
+                            break
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
 
 task.spawn(function()
     while true do

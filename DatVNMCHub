@@ -1,0 +1,482 @@
+-- [[ ĐỢI GAME LOAD HOÀN TOÀN ]] --
+if not game:IsLoaded() then game.Loaded:Wait() end
+repeat task.wait() until game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Character
+
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Xóa UI cũ nếu có trùng lặp
+if CoreGui:FindFirstChild("DatVNMCHub_Banana") then CoreGui["DatVNMCHub_Banana"]:Destroy() end
+
+-- ====================================================================
+-- [CẤU HÌNH TRẠNG THÁI HỆ THỐNG - TOGGLES]
+-- ====================================================================
+_G.AutoFarmLevel = false
+_G.AutoAttack = false
+_G.BringMob = false
+_G.KillAuraDragonStorm = false
+_G.AntiAFK = true
+
+_G.AutoBuyChip = false
+_G.AutoStartRaid = false
+_G.AutoKillAuraRaid = false
+_G.AutoNextIslandRaid = false
+
+_G.SpeedHack = false
+_G.SpeedValue = 16
+_G.WalkOnWater = false
+
+_G.AutoSeaEvent = false
+_G.AutoAttackSea = false
+_G.AutoSitBoat = false
+_G.FlyToRoughSea = false
+
+-- ====================================================================
+-- [HÀM DỊCH CHUYỂN TWEEN MƯỢT]
+-- ====================================================================
+function ToTween(pos)
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    local distance = (pos.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    local speed = 300
+    local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, tweenInfo, {CFrame = pos})
+    tween:Play()
+    return tween
+end
+
+-- ====================================================================
+-- [THIẾT KẾ GIAO DIỆN BANANA HUB CHUẨN]
+-- ====================================================================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DatVNMCHub_Banana"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- HÀM KÉO THẢ CHO MOBILE
+local function makeDraggable(frame, handle)
+    local dragging, dragInput, dragStart, startPos
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- NÚT NỔI BANANA IMAGE BUTTON (ID: 108529748091064)
+local FloatingBtn = Instance.new("ImageButton")
+FloatingBtn.Name = "BananaFloatingBtn"
+FloatingBtn.Parent = ScreenGui
+FloatingBtn.Size = UDim2.new(0, 55, 0, 55)
+FloatingBtn.Position = UDim2.new(0, 20, 0, 150)
+FloatingBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+FloatingBtn.Image = "rbxassetid://108529748091064"
+FloatingBtn.Active = true
+FloatingBtn.Draggable = true
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 28)
+BtnCorner.Parent = FloatingBtn
+
+local BtnStroke = Instance.new("UIStroke")
+BtnStroke.Thickness = 2
+BtnStroke.Color = Color3.fromRGB(255, 220, 0)
+BtnStroke.Parent = FloatingBtn
+
+-- KHUNG CHÍNH MENU LÀM BẰNG IMAGE LABEL (ID: 108529748091064)
+local MainFrame = Instance.new("ImageLabel")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 520, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -260, 0.5, -180)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Image = "rbxassetid://108529748091064" -- Ảnh nền khung chính
+MainFrame.ImageTransparency = 0.15 -- Độ mờ nhẹ của ảnh nền giúp dễ nhìn chữ hơn
+MainFrame.ScaleType = Enum.ScaleType.Stretch
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 1
+MainStroke.Color = Color3.fromRGB(255, 220, 0)
+MainStroke.Parent = MainFrame
+
+-- THANH TIÊU ĐỀ (TOP BAR) - ĐỂ TRONG SUỐT ĐỂ THẤY ẢNH NỀN
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Parent = MainFrame
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TopBar.BackgroundTransparency = 0.4 -- Trong suốt vừa phải
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 10)
+TopCorner.Parent = TopBar
+
+makeDraggable(MainFrame, TopBar)
+
+-- TÊN HUB
+local Title = Instance.new("TextLabel")
+Title.Parent = TopBar
+Title.Text = "DatVNMCHub"
+Title.TextColor3 = Color3.fromRGB(255, 220, 0)
+Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.Position = UDim2.new(0, 15, 0, 8)
+Title.Size = UDim2.new(0, 300, 0, 20)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.BackgroundTransparency = 1
+
+-- SUBTITLE
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Parent = TopBar
+Subtitle.Text = "By DatVNMC, Subscriber Cho DatVNMC"
+Subtitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+Subtitle.TextSize = 11
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.Position = UDim2.new(0, 15, 0, 28)
+Subtitle.Size = UDim2.new(0, 400, 0, 15)
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.BackgroundTransparency = 1
+
+-- KHU VỰC CHỌN TAB (SIDEBAR)
+local Sidebar = Instance.new("ScrollingFrame")
+Sidebar.Parent = MainFrame
+Sidebar.Size = UDim2.new(0, 140, 1, -60)
+Sidebar.Position = UDim2.new(0, 10, 0, 55)
+Sidebar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Sidebar.BackgroundTransparency = 0.5 -- Làm mờ nền thanh bên
+Sidebar.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+Sidebar.ScrollBarThickness = 0
+
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 8)
+SidebarCorner.Parent = Sidebar
+
+local SidebarList = Instance.new("UIListLayout")
+SidebarList.Parent = Sidebar
+SidebarList.Padding = UDim.new(0, 5)
+
+-- KHU VỰC NỘI DUNG (CONTAINER)
+local Container = Instance.new("Frame")
+Container.Parent = MainFrame
+Container.Size = UDim2.new(1, -170, 1, -60)
+Container.Position = UDim2.new(0, 160, 0, 55)
+Container.BackgroundTransparency = 1
+
+-- SỰ KIỆN ẨN/HIỆN MENU
+FloatingBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+-- HÀM TẠO TAB VÀ TRANG NỘI DUNG
+local pages = {}
+local firstTab = true
+
+local function CreateTab(name)
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Parent = Sidebar
+    TabBtn.Size = UDim2.new(1, 0, 0, 35)
+    TabBtn.BackgroundColor3 = Color3.fromRGB(255, 220, 0)
+    TabBtn.BackgroundTransparency = 0.9
+    TabBtn.Text = name
+    TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabBtn.TextSize = 13
+    TabBtn.Font = Enum.Font.GothamBold
+    
+    local TabCorner = Instance.new("UICorner")
+    TabCorner.CornerRadius = UDim.new(0, 6)
+    TabCorner.Parent = TabBtn
+
+    local Page = Instance.new("ScrollingFrame")
+    Page.Parent = Container
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.Visible = false
+    Page.CanvasSize = UDim2.new(0, 0, 2, 0)
+    Page.ScrollBarThickness = 3
+    Page.ScrollBarImageColor3 = Color3.fromRGB(255, 220, 0)
+
+    local PageList = Instance.new("UIListLayout")
+    PageList.Parent = Page
+    PageList.Padding = UDim.new(0, 6)
+
+    if firstTab then
+        Page.Visible = true
+        TabBtn.TextColor3 = Color3.fromRGB(255, 220, 0)
+        TabBtn.BackgroundTransparency = 0.8
+        firstTab = false
+    end
+
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, p in pairs(pages) do p.Visible = false end
+        for _, b in pairs(Sidebar:GetChildren()) do
+            if b:IsA("TextButton") then 
+                b.TextColor3 = Color3.fromRGB(255, 255, 255)
+                b.BackgroundTransparency = 0.9
+            end
+        end
+        Page.Visible = true
+        TabBtn.TextColor3 = Color3.fromRGB(255, 220, 0)
+        TabBtn.BackgroundTransparency = 0.8
+    end)
+
+    table.insert(pages, Page)
+    return Page
+end
+
+-- HÀM TẠO TOGGLE CHUẨN BANANA HUB (CÓ NỀN MỜ ĐỂ THẤY ẢNH MENU)
+local function CreateToggle(parent, text, default, callback)
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Size = UDim2.new(1, -10, 0, 40)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    ToggleFrame.BackgroundTransparency = 0.3 -- Làm mờ để thấy ảnh nền phía sau
+    ToggleFrame.Parent = parent
+
+    local TFCorner = Instance.new("UICorner")
+    TFCorner.CornerRadius = UDim.new(0, 6)
+    TFCorner.Parent = ToggleFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Parent = ToggleFrame
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextSize = 13
+    Label.Font = Enum.Font.Gotham
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.Size = UDim2.new(1, -60, 1, 0)
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.BackgroundTransparency = 1
+
+    local ClickBtn = Instance.new("TextButton")
+    ClickBtn.Parent = ToggleFrame
+    ClickBtn.Size = UDim2.new(0, 45, 0, 22)
+    ClickBtn.Position = UDim2.new(1, -55, 0, 9)
+    ClickBtn.BackgroundColor3 = default and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(50, 50, 50)
+    ClickBtn.Text = ""
+    
+    local CBCorner = Instance.new("UICorner")
+    CBCorner.CornerRadius = UDim.new(0, 11)
+    CBCorner.Parent = ClickBtn
+
+    local state = default
+    ClickBtn.MouseButton1Click:Connect(function()
+        state = not state
+        ClickBtn.BackgroundColor3 = state and Color3.fromRGB(255, 220, 0) or Color3.fromRGB(50, 50, 50)
+        callback(state)
+    end)
+end
+
+-- HÀM TẠO BUTTON
+local function CreateButton(parent, text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -10, 0, 35)
+    Btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Btn.BackgroundTransparency = 0.2
+    Btn.Text = text
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.TextSize = 13
+    Btn.Font = Enum.Font.GothamBold
+    Btn.Parent = parent
+
+    local BCorner = Instance.new("UICorner")
+    BCorner.CornerRadius = UDim.new(0, 6)
+    BCorner.Parent = Btn
+
+    local BStroke = Instance.new("UIStroke")
+    BStroke.Thickness = 1
+    BStroke.Color = Color3.fromRGB(255, 220, 0)
+    BStroke.Parent = Btn
+
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+-- ====================================================================
+-- [PHÂN CHIA TABS CÁC TÍNH NĂNG]
+-- ====================================================================
+local FarmPage = CreateTab("Auto Farm")
+local DungeonPage = CreateTab("Dungeon/Raid")
+local SeaPage = CreateTab("Sea Events")
+local CombatPage = CreateTab("Combat/Misc")
+
+-- TAB 1: AUTO FARM & AURA
+CreateToggle(FarmPage, "Auto Farm Level (All Seas)", false, function(state)
+    _G.AutoFarmLevel = state
+    _G.AutoAttack = state
+    _G.BringMob = state
+end)
+
+CreateToggle(FarmPage, "Kill Aura Dragon Storm (Auto Z)", false, function(state)
+    _G.KillAuraDragonStorm = state
+end)
+
+-- TAB 2: DUNGEON & RAID
+CreateToggle(DungeonPage, "Auto Mua Chip Raid (Flame)", false, function(state) _G.AutoBuyChip = state end)
+CreateToggle(DungeonPage, "Auto Bắt Đầu Raid", false, function(state) _G.AutoStartRaid = state end)
+CreateToggle(DungeonPage, "Auto Dọn Quái Raid (Kill Aura)", false, function(state) _G.AutoKillAuraRaid = state end)
+CreateToggle(DungeonPage, "Auto Sang Đảo Tiếp Theo", false, function(state) _G.AutoNextIslandRaid = state end)
+
+-- TAB 3: SEA EVENTS
+CreateToggle(SeaPage, "Auto Sea Event (Terrorshark...)", false, function(state) _G.AutoSeaEvent = state end)
+CreateToggle(SeaPage, "Auto Click Tấn Công Quái Biển", false, function(state) _G.AutoAttackSea = state end)
+CreateToggle(SeaPage, "Auto Giữ Ghế Lái Thuyền", false, function(state) _G.AutoSitBoat = state end)
+CreateToggle(SeaPage, "Auto Bay Ra Biển Động (Zone 6)", false, function(state) _G.FlyToRoughSea = state end)
+
+-- TAB 4: COMBAT & MISC
+CreateToggle(CombatPage, "Đứng Trên Nước (Walk On Water)", false, function(state)
+    _G.WalkOnWater = state
+    if state then
+        local waterFloor = Instance.new("Part")
+        waterFloor.Name = "Banana_WaterFloor"
+        waterFloor.Size = Vector3.new(50000, 2, 50000)
+        waterFloor.Position = Vector3.new(0, -2, 0)
+        waterFloor.Anchored = true
+        waterFloor.Transparency = 1
+        waterFloor.Parent = workspace
+    else
+        local floor = workspace:FindFirstChild("Banana_WaterFloor")
+        if floor then floor:Destroy() end
+    end
+end)
+
+CreateButton(CombatPage, "Xóa Đồ Họa (Giảm Lag Siêu Cấp)", function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and not v:IsA("MeshPart") then v.Material = Enum.Material.SmoothPlastic v.Reflectance = 0
+        elseif v:IsA("Decal") or v:IsA("Texture") then v:Destroy() end
+    end
+    Lighting.GlobalShadows = false
+end)
+
+-- ====================================================================
+-- [CORE LOGIC ENGINES CHẠY NGẦM]
+-- ====================================================================
+
+-- LOGIC SPAM CHIÊU DRAGON STORM Z
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G.KillAuraDragonStorm then
+            pcall(function()
+                VirtualUser:SetKeyDown("z")
+                task.wait(0.1)
+                VirtualUser:SetUpKey("z")
+            end)
+        end
+    end
+end)
+
+-- LOGIC AUTO SEA EVENT
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        if _G.AutoSeaEvent then
+            pcall(function()
+                local TargetSeaMonster = nil
+                for _, v in pairs(workspace:GetChildren()) do
+                    if (v.Name == "Sea Beast" or v.Name == "Terrorshark" or string.find(v.Name, "Ship") or string.find(v.Name, "Shark")) and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                        TargetSeaMonster = v
+                        break
+                    end
+                end
+                if TargetSeaMonster then
+                    ToTween(TargetSeaMonster.HumanoidRootPart.CFrame * CFrame.new(0, 35, 0))
+                    if _G.AutoAttackSea then
+                        VirtualUser:CaptureController()
+                        VirtualUser:ClickButton1(Vector2.new(50, 50))
+                    end
+                else
+                    if _G.FlyToRoughSea then
+                        ToTween(CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position.X + 200, 45, LocalPlayer.Character.HumanoidRootPart.Position.Z + 200))
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- LOGIC AUTO FARM LEVEL GỐC
+local CurrentQuestName = ""
+local CurrentMobName = ""
+function CheckQuestAndMob()
+    local myLevel = LocalPlayer.Data.Level.Value
+    if myLevel >= 1 and myLevel < 15 then CurrentQuestName = "BanditQuest1" CurrentMobName = "Bandit"
+    elseif myLevel >= 15 and myLevel < 30 then CurrentQuestName = "MonkeyQuest1" CurrentMobName = "Monkey"
+    else CurrentQuestName = "BanditQuest1" CurrentMobName = "Bandit" end
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G.AutoFarmLevel then
+            pcall(function()
+                CheckQuestAndMob()
+                local hasQuest = LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") and LocalPlayer.PlayerGui.Main.Quest.Visible
+                if not hasQuest then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", CurrentQuestName, 1)
+                else
+                    local targetMob = nil
+                    for _, mob in pairs(workspace.Enemies:GetChildren()) do
+                        if mob.Name == CurrentMobName Scheme and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                            targetMob = mob
+                            break
+                        end
+                    end
+                    if targetMob and targetMob:FindFirstChild("HumanoidRootPart") then
+                        ToTween(targetMob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                        if _G.AutoAttack then
+                            VirtualUser:CaptureController()
+                            VirtualUser:ClickButton1(Vector2.new(50, 50))
+                        end
+                        if _G.BringMob then
+                            for _, otherMob in pairs(workspace.Enemies:GetChildren()) do
+                                if otherMob.Name == CurrentMobName and otherMob ~= targetMob and otherMob:FindFirstChild("HumanoidRootPart") then
+                                    otherMob.HumanoidRootPart.CFrame = targetMob.HumanoidRootPart.CFrame
+                                    otherMob.HumanoidRootPart.CanCollide = false
+                                end
+                            end
+                        end
+                    else
+                        for _, spawnPoint in pairs(workspace._WorldOrigin.EnemySpawns:GetChildren()) do
+                            if string.find(spawnPoint.Name, CurrentMobName) then
+                                ToTween(spawnPoint.CFrame * CFrame.new(0, 20, 0))
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ANTI AFK
+if _G.AntiAFK then
+    LocalPlayer.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end)
+end

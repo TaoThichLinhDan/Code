@@ -1,0 +1,586 @@
+-- [[ DATVNMC HUB - QUANTUM ONYX STYLE EDITION 2026 ]] --
+
+local DatVNMC_ImageID = "rbxassetid://108529748091064"
+
+-- Khởi động thông báo hệ thống kiểu Onyx
+local StarterGui = game:GetService("StarterGui")
+StarterGui:SetCore("SendNotification", {
+    Title = "🔮 DatVNMC Onyx 🔮",
+    Text = "QuantumOnyx UI Loaded! NPC Fighting Styles Teleport Added!",
+    Duration = 6
+})
+
+-- Tải Thư Viện UI Fluent (Phong cách QuantumOnyx Premium)
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/InterfaceManager.lua"))()
+
+-- Khởi tạo Window QuantumOnyx
+local Window = Fluent:CreateWindow({
+    Title = "DatVNMC Hub — QuantumOnyx",
+    SubTitle = "by DatVNMC",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true, 
+    Theme = "Dark", 
+    MinimizeKey = Enum.KeyCode.LeftControl 
+})
+
+-- Cấu hình trạng thái hệ thống (Toggles)
+_G.AutoFarmLevel = false
+_G.AutoAttack = false
+_G.BringMob = false
+_G.AntiAFK = true
+
+-- Cấu hình Dungeon & Raid Toggles
+_G.AutoBuyChip = false
+_G.AutoStartRaid = false
+_G.AutoKillAuraRaid = false
+_G.AutoNextIslandRaid = false
+
+-- Cấu hình PvP & ESP Toggles
+_G.AimSkill = false
+_G.SpeedHack = false
+_G.SpeedValue = 16
+_G.WalkOnWater = false
+_G.PlayerESP = false
+_G.FruitESP = false
+_G.ChestESP = false
+_G.IslandESP = false
+
+-- Cấu hình Race V4 Toggles
+_G.AutoLookMoon = false
+_G.AutoPickupGear = false
+_G.TweenMirage = false
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local VirtualUser = game:GetService("VirtualUser")
+local CoreGui = game:GetService("CoreGui")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
+
+-- Khởi tạo các Tabs theo chuẩn QuantumOnyx
+local Tabs = {
+    Main = Window:AddTab({ Title = "Auto Farm", Icon = "home" }),
+    Dungeon = Window:AddTab({ Title = "Dungeon & Fruits", Icon = "activity" }), 
+    Combat = Window:AddTab({ Title = "Combat PvP", Icon = "swords" }),
+    ESP = Window:AddTab({ Title = "Hệ Thống ESP", Icon = "eye" }),
+    RaceV4 = Window:AddTab({ Title = "Up Tộc V4", Icon = "moon" }),
+    Teleport = Window:AddTab({ Title = "Teleport", Icon = "map-pin" }),
+    Misc = Window:AddTab({ Title = "Misc & Shop Võ", Icon = "settings" }) -- Tích hợp shop võ tại đây
+}
+
+-- ====================================================================
+-- [HÀM TẠO NÚT NỔI ĐỘC LẬP HOÀN CHỈNH]
+-- ====================================================================
+task.spawn(function()
+    if CoreGui:FindFirstChild("DatVNMC_OnyxToggle") then 
+        CoreGui["DatVNMC_OnyxToggle"]:Destroy() 
+    end
+
+    local ToggleScreenGui = Instance.new("ScreenGui")
+    ToggleScreenGui.Name = "DatVNMC_OnyxToggle"
+    ToggleScreenGui.Parent = CoreGui
+    ToggleScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+    local OpenCloseBtn = Instance.new("ImageButton")
+    OpenCloseBtn.Name = "OpenCloseBtn"
+    OpenCloseBtn.Parent = ToggleScreenGui
+    OpenCloseBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    OpenCloseBtn.Position = UDim2.new(0, 15, 0, 140) 
+    OpenCloseBtn.Size = UDim2.new(0, 50, 0, 50)
+    OpenCloseBtn.Image = DatVNMC_ImageID
+    OpenCloseBtn.ScaleType = Enum.ScaleType.Crop
+    OpenCloseBtn.ZIndex = 9999
+
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 25) 
+    UICorner.Parent = OpenCloseBtn
+    
+    local UIStroke = Instance.new("UIStroke")
+    UIStroke.Thickness = 2
+    UIStroke.Color = Color3.fromRGB(170, 0, 255) 
+    UIStroke.Parent = OpenCloseBtn
+
+    OpenCloseBtn.Active = true
+    OpenCloseBtn.Draggable = true
+
+    OpenCloseBtn.MouseButton1Click:Connect(function()
+        VirtualUser:SetKeyDown("LeftControl")
+        task.wait(0.05)
+        VirtualUser:SetKeyUp("LeftControl")
+    end)
+end)
+
+-- ====================================================================
+-- [HÀM DỊCH CHUYỂN TWEEN AN TOÀN]
+-- ====================================================================
+function ToTween(pos)
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    local distance = (pos.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    local speed = 300
+    local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, tweenInfo, {CFrame = pos})
+    tween:Play()
+    return tween
+end
+
+-- ====================================================================
+-- [XÂY DỰNG GIAO DIỆN PHẦN TỬ - TABS]
+-- ====================================================================
+
+-- TAB 1: AUTO FARM
+Tabs.Main:AddParagraph({ Title = "DatVNMC — Hệ Thống Farm Cấp", Content = "Tự động hoàn toàn, tối ưu hóa tốc độ nhận nhiệm vụ." })
+
+local FarmToggle = Tabs.Main:AddToggle("AutoFarmLevel", {Title = "Auto Farm Level (All Seas)", Default = false})
+FarmToggle:OnChanged(function()
+    _G.AutoFarmLevel = Fluent.Options.AutoFarmLevel.Value
+    _G.AutoAttack = Fluent.Options.AutoFarmLevel.Value
+    _G.BringMob = Fluent.Options.AutoFarmLevel.Value
+end)
+
+-- TAB 2: DUNGEON & FRUITS (RAID)
+local RaidSec = Tabs.Dungeon:AddSection("Quản Lý Raid Dungeon")
+
+local BuyChipTgl = Tabs.Dungeon:AddToggle("AutoBuyChip", {Title = "Auto Mua Chip Raid (Flame)", Default = false})
+BuyChipTgl:OnChanged(function() _G.AutoBuyChip = Fluent.Options.AutoBuyChip.Value end)
+
+local StartRaidTgl = Tabs.Dungeon:AddToggle("AutoStartRaid", {Title = "Auto Nhấn Nút Khởi Hành Raid", Default = false})
+StartRaidTgl:OnChanged(function() _G.AutoStartRaid = Fluent.Options.AutoStartRaid.Value end)
+
+local KillAuraRaidTgl = Tabs.Dungeon:AddToggle("AutoKillAuraRaid", {Title = "Auto Kill Aura & Gom Quái Raid", Default = false})
+KillAuraRaidTgl:OnChanged(function() _G.AutoKillAuraRaid = Fluent.Options.AutoKillAuraRaid.Value end)
+
+local NextIslandTgl = Tabs.Dungeon:AddToggle("AutoNextIslandRaid", {Title = "Auto Dịch Chuyển Sang Đảo Tiếp Theo", Default = false})
+NextIslandTgl:OnChanged(function() _G.AutoNextIslandRaid = Fluent.Options.AutoNextIslandRaid.Value end)
+
+local FruitSec = Tabs.Dungeon:AddSection("Gacha & Lưu Trữ Trái Ác Quỷ")
+
+Tabs.Dungeon:AddButton({
+    Title = "Gacha / Random Trái Ác Quỷ (Từ Xa)",
+    Callback = function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Cousin", "Buy") end
+})
+
+Tabs.Dungeon:AddButton({
+    Title = "Cất Tất Cả Trái Ác Quỷ Đang Cầm Vào Kho (Store Fruit)",
+    Callback = function()
+        for _, v in pairs(LocalPlayer.Character:GetChildren()) do
+            if v:IsA("Tool") and string.find(v.Name, "Fruit") then
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", v.DataFolder.FruitID.Value, v)
+            end
+        end
+        for _, v in pairs(LocalPlayer.Backpack:GetChildren()) do
+            if v:IsA("Tool") and string.find(v.Name, "Fruit") then
+                game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", v.DataFolder.FruitID.Value, v)
+            end
+        end
+    end
+})
+
+-- TAB 3: COMBAT PVP
+Tabs.Combat:AddParagraph({ Title = "DatVNMC — Săn Bounty Cao Cấp", Content = "Hỗ trợ ngắm và di chuyển pvp mượt." })
+
+local AimToggle = Tabs.Combat:AddToggle("AimSkill", {Title = "Aim Skill (Khóa Mục Tiêu)", Default = false})
+AimToggle:OnChanged(function() _G.AimSkill = Fluent.Options.AimSkill.Value end)
+
+local WaterToggle = Tabs.Combat:AddToggle("WalkOnWater", {Title = "Đứng Trên Nước (Walk On Water)", Default = false})
+WaterToggle:OnChanged(function(state)
+    _G.WalkOnWater = state
+    if state then
+        local waterFloor = Instance.new("Part")
+        waterFloor.Name = "DatVNMC_WaterFloor"
+        waterFloor.Size = Vector3.new(50000, 2, 50000)
+        waterFloor.Position = Vector3.new(0, -2, 0)
+        waterFloor.Anchored = true
+        waterFloor.Transparency = 1
+        waterFloor.Parent = workspace
+    else
+        local floor = workspace:FindFirstChild("DatVNMC_WaterFloor")
+        if floor then floor:Destroy() end
+    end
+end)
+
+local SpeedSlider = Tabs.Combat:AddSlider("SpeedSlider", {
+    Title = "Tốc Độ Di Chuyển (Speed)",
+    Description = "Điều chỉnh tốc độ chạy PvP",
+    Default = 16,
+    Min = 16,
+    Max = 100,
+    Rounding = 0,
+    Callback = function(Value)
+        _G.SpeedValue = Value
+        _G.SpeedHack = true
+    end
+})
+
+-- TAB 4: HỆ THỐNG ESP ĐỊNH VỊ
+local ESP_Section = Tabs.ESP:AddSection("Định Vị Toàn Bản Đồ")
+
+local P_ESP = Tabs.ESP:AddToggle("PlayerESP", {Title = "Định Vị Người Chơi (Player ESP)", Default = false})
+P_ESP:OnChanged(function() _G.PlayerESP = Fluent.Options.PlayerESP.Value end)
+
+local F_ESP = Tabs.ESP:AddToggle("FruitESP", {Title = "Định Vị Trái Ác Quỷ (Fruit ESP)", Default = false})
+F_ESP:OnChanged(function() _G.FruitESP = Fluent.Options.FruitESP.Value end)
+
+local C_ESP = Tabs.ESP:AddToggle("ChestESP", {Title = "Định Vị Rương (Chest/Belly ESP)", Default = false})
+C_ESP:OnChanged(function() _G.ChestESP = Fluent.Options.ChestESP.Value end)
+
+local I_ESP = Tabs.ESP:AddToggle("IslandESP", {Title = "Định Vị Đảo (Islands ESP)", Default = false})
+I_ESP:OnChanged(function() _G.IslandESP = Fluent.Options.IslandESP.Value end)
+
+-- TAB 5: UP TỘC V4
+local Race_Section = Tabs.RaceV4:AddSection("Treo Đảo Bí Ẩn & Nhìn Trăng")
+
+local MirageTgl = Tabs.RaceV4:AddToggle("TweenMirage", {Title = "Auto Tìm/Bay Đến Đảo Mirage", Default = false})
+MirageTgl:OnChanged(function() _G.TweenMirage = Fluent.Options.TweenMirage.Value end)
+
+local MoonTgl = Tabs.RaceV4:AddToggle("AutoLookMoon", {Title = "Auto Nhìn Trăng (Look Moon)", Default = false})
+MoonTgl:OnChanged(function() _G.AutoLookMoon = Fluent.Options.AutoLookMoon.Value end)
+
+local GearTgl = Tabs.RaceV4:AddToggle("AutoPickupGear", {Title = "Auto Nhặt Bánh Răng (Gear)", Default = false})
+GearTgl:OnChanged(function() _G.AutoPickupGear = Fluent.Options.AutoPickupGear.Value end)
+
+-- TAB 6: TELEPORT WORLD
+local Sea_Section = Tabs.Teleport:AddSection("Chuyển Đổi Thế Giới")
+
+Tabs.Teleport:AddButton({
+    Title = "Dịch Chuyển Đi Sea 1",
+    Callback = function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelMain") end
+})
+Tabs.Teleport:AddButton({
+    Title = "Dịch Chuyển Đi Sea 2",
+    Callback = function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelDressrosa") end
+})
+Tabs.Teleport:AddButton({
+    Title = "Dịch Chuyển Đi Sea 3",
+    Callback = function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("TravelZou") end
+})
+
+-- ====================================================================
+-- [MỤC CHỨC NĂNG MỚI: DỊCH CHUYỂN ĐẾN NPC SHOP VÕ]
+-- ====================================================================
+local FightingStyleSection = Tabs.Misc:AddSection("Shop Võ - Dịch Chuyển Học Võ")
+
+local FightingStyles = {
+    ["Godhuman (Ancient Monk)"] = Vector3.new(-2870, 246, -14340),
+    ["Superhuman (Martial Arts Master)"] = Vector3.new(-11466, 332, -441),
+    ["Death Step (Phoenis)"] = Vector3.new(-5489, 90, -1405),
+    ["Sharkman Karate (Daigrock the Shark)"] = Vector3.new(-2828, 7, -10045),
+    ["Electric Claw (Previous Hero)"] = Vector3.new(-9510, 316, -5720),
+    ["Dragon Talon (Uzoth)"] = Vector3.new(8955, 30, -13795),
+    ["Black Leg / Electro / Fishman / Dragon Breath (Sea 1/2)"] = Vector3.new(-3827, 20, -2570)
+}
+
+local StyleDropdown = Tabs.Misc:AddDropdown("FightingStyleDropdown", {
+    Title = "Chọn Kiểu Võ Muốn Học",
+    Values = {"Godhuman (Ancient Monk)", "Superhuman (Martial Arts Master)", "Death Step (Phoenis)", "Sharkman Karate (Daigrock the Shark)", "Electric Claw (Previous Hero)", "Dragon Talon (Uzoth)", "Black Leg / Electro / Fishman / Dragon Breath (Sea 1/2)"},
+    CurrentValue = "Godhuman (Ancient Monk)",
+    Callback = function(Option)
+        _G.SelectedFightingStyle = Option
+    end
+})
+
+Tabs.Misc:AddButton({
+    Title = "Bay Đến NPC Học Võ Đã Chọn",
+    Callback = function()
+        if _G.SelectedFightingStyle and FightingStyles[_G.SelectedFightingStyle] then
+            local targetPos = FightingStyles[_G.SelectedFightingStyle]
+            ToTween(CFrame.new(targetPos))
+        else
+            StarterGui:SetCore("SendNotification", { Title = "Lỗi", Text = "Vui lòng chọn phong cách võ trước!", Duration = 3 })
+        end
+    end
+})
+
+-- TAB 7: TIỆN ÍCH MISC KHÁC
+local Lag_Section = Tabs.Misc:AddSection("Tối Ưu & Treo Máy (Lag Fix)")
+
+Tabs.Misc:AddButton({
+    Title = "Xóa Đồ Họa (Bản Nhẹ — Tăng FPS)",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v:IsA("MeshPart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") then v:Destroy()
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then v.Enabled = false end
+        end
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 9e9
+        settings().Rendering.QualityLevel = 1
+    end
+})
+
+local WhiteScreenTgl = Tabs.Misc:AddToggle("WhiteScreen", {Title = "Trắng Màn Hình (White Screen)", Default = false})
+WhiteScreenTgl:OnChanged(function(state)
+    if state then
+        local whiteFrame = Instance.new("Frame")
+        whiteFrame.Name = "DatVNMC_WhiteScreen"
+        whiteFrame.Parent = CoreGui:FindFirstChildOfClass("ScreenGui") or LocalPlayer.PlayerGui:FindFirstChildOfClass("ScreenGui")
+        whiteFrame.Size = UDim2.new(1, 0, 1, 0)
+        whiteFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        whiteFrame.ZIndex = 999999
+        local text = Instance.new("TextLabel", whiteFrame)
+        text.Size = UDim2.new(1, 0, 1, 0)
+        text.Text = "DatVNMC TREO MÁY TIẾT KIỆM PIN / GIẢM CPU..."
+        text.TextColor3 = Color3.fromRGB(0, 0, 0)
+        text.TextSize = 24
+        text.Font = Enum.Font.GothamBold
+        text.BackgroundTransparency = 1
+    else
+        for _, v in pairs(CoreGui:GetDescendants()) do if v.Name == "DatVNMC_WhiteScreen" then v:Destroy() end end
+        for _, v in pairs(LocalPlayer.PlayerGui:GetDescendants()) do if v.Name == "DatVNMC_WhiteScreen" then v:Destroy() end end
+    end
+end)
+
+local Sv_Section = Tabs.Misc:AddSection("Quản Lý Máy Chủ")
+Tabs.Misc:AddButton({
+    Title = "Hop Server (Đổi Máy Chủ)",
+    Callback = function()
+        local HttpService = game:GetService("HttpService")
+        local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+        local Servers = HttpService:JSONDecode(game:HttpGet(Api)).data
+        for _, server in pairs(Servers) do
+            if server.playing < server.maxPlayers and server.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
+                break
+            end
+        end
+    end
+})
+Tabs.Misc:AddButton({
+    Title = "Rejoin Server (Vào Lại)",
+    Callback = function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer) end
+})
+
+-- ====================================================================
+-- [CORE LOGIC ENGINE RUNNING BACKGROUND]
+-- ====================================================================
+
+function MakeESP(parent, name, color)
+    if not parent:FindFirstChild("DatVNMC_ESP_" .. name) then
+        local billboard = Instance.new("BillboardGui")
+        local label = Instance.new("TextLabel")
+        billboard.Name = "DatVNMC_ESP_" .. name
+        billboard.Parent = parent
+        billboard.AlwaysOnTop = true
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.ExtentsOffset = Vector3.new(0, 3, 0)
+        label.Parent = billboard
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = color
+        label.TextSize = 13
+        label.Font = Enum.Font.GothamBold
+    end
+end
+
+function RemoveESP(parent, name)
+    if parent and parent:FindFirstChild("DatVNMC_ESP_" .. name) then parent["DatVNMC_ESP_" .. name]:Destroy() end
+end
+
+function getClosestPlayer()
+    local closestTarget = nil
+    local shortestDistance = math.huge
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+            local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).magnitude
+            if distance < shortestDistance then shortestDistance = distance closestTarget = player.Character.HumanoidRootPart end
+        end
+    end
+    return closestTarget
+end
+
+if _G.AntiAFK then
+    LocalPlayer.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end)
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.4)
+        pcall(function()
+            if _G.AutoBuyChip then
+                local hasChip = LocalPlayer.Backpack:FindFirstChild("Special Microchip") or LocalPlayer.Character:FindFirstChild("Special Microchip")
+                if not hasChip then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("RaidsOne","OFC", "Flame")
+                end
+            end
+
+            if _G.AutoStartRaid and (LocalPlayer.Backpack:FindFirstChild("Special Microchip") or LocalPlayer.Character:FindFirstChild("Special Microchip")) then
+                local startButton = workspace:FindFirstChild("RaidNPC") and workspace.RaidNPC:FindFirstChild("Root")
+                if startButton then
+                    ToTween(startButton.CFrame)
+                    fireclickdetector(workspace.RaidNPC.Button.ClickDetector)
+                end
+            end
+
+            if _G.AutoKillAuraRaid and string.find(game:GetService("ReplicatedStorage").QuestCompact.Value, "Raid") then
+                for _, enemy in pairs(workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and enemy:FindFirstChild("HumanoidRootPart") then
+                        ToTween(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0))
+                        VirtualUser:CaptureController()
+                        VirtualUser:ClickButton1(Vector2.new(50, 50))
+                    end
+                end
+            end
+
+            if _G.AutoNextIslandRaid and workspace:FindFirstChild("Island") and workspace.Island:FindFirstChild("NextIsland") then
+                ToTween(workspace.Island.NextIsland.CFrame)
+            end
+        end)
+    end
+end)
+
+local CurrentQuestName = ""
+local CurrentMobName = ""
+
+function CheckQuestAndMob()
+    local myLevel = LocalPlayer.Data.Level.Value
+    if myLevel >= 1 and myLevel < 15 then CurrentQuestName = "BanditQuest1" CurrentMobName = "Bandit"
+    elseif myLevel >= 15 and myLevel < 30 then CurrentQuestName = "MonkeyQuest1" CurrentMobName = "Monkey"
+    else CurrentQuestName = "BanditQuest1" CurrentMobName = "Bandit" end
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G.AutoFarmLevel then
+            pcall(function()
+                CheckQuestAndMob()
+                local hasQuest = LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") and LocalPlayer.PlayerGui.Main.Quest.Visible
+                if not hasQuest then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", CurrentQuestName, 1)
+                else
+                    local targetMob = nil
+                    for _, mob in pairs(workspace.Enemies:GetChildren()) do
+                        if mob.Name == CurrentMobName and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                            targetMob = mob
+                            break
+                        end
+                    end
+                    if targetMob and targetMob:FindFirstChild("HumanoidRootPart") then
+                        ToTween(targetMob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                        if _G.AutoAttack then
+                            VirtualUser:CaptureController()
+                            VirtualUser:ClickButton1(Vector2.new(50, 50))
+                        end
+                        if _G.BringMob then
+                            for _, otherMob in pairs(workspace.Enemies:GetChildren()) do
+                                if otherMob.Name == CurrentMobName and otherMob ~= targetMob and otherMob:FindFirstChild("HumanoidRootPart") then
+                                    otherMob.HumanoidRootPart.CFrame = targetMob.HumanoidRootPart.CFrame
+                                    otherMob.HumanoidRootPart.CanCollide = false
+                                end
+                            end
+                        end
+                    else
+                        for _, spawnPoint in pairs(workspace._WorldOrigin.EnemySpawns:GetChildren()) do
+                            if string.find(spawnPoint.Name, CurrentMobName) then
+                                ToTween(spawnPoint.CFrame * CFrame.new(0, 20, 0))
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if _G.AimSkill then
+        local target = getClosestPlayer()
+        if target then workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Position) end
+    end
+    if _G.SpeedHack and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = _G.SpeedValue
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        pcall(function()
+            if _G.PlayerESP then
+                for _, p in pairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        MakeESP(p.Character.HumanoidRootPart, "Player", Color3.fromRGB(255, 0, 0))
+                        local dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).magnitude)
+                        p.Character.HumanoidRootPart["DatVNMC_ESP_Player"].TextLabel.Text = "👤 " .. p.Name .. " [" .. dist .. "m]"
+                    end
+                end
+            else
+                for _, p in pairs(Players:GetPlayers()) do if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then RemoveESP(p.Character.HumanoidRootPart, "Player") end end
+            end
+
+            if _G.FruitESP then
+                for _, v in pairs(workspace:GetChildren()) do
+                    if v:IsA("Tool") or (v:IsA("Model") and string.find(v.Name, "Fruit")) then
+                        local handle = v:FindFirstChild("Handle") or v:FindFirstChildOfClass("BasePart")
+                        if handle then
+                            MakeESP(handle, "Fruit", Color3.fromRGB(255, 0, 255))
+                            local dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - handle.Position).magnitude)
+                            handle["DatVNMC_ESP_Fruit"].TextLabel.Text = "🍎 " .. v.Name .. " [" .. dist .. "m]"
+                        end
+                    end
+                end
+            else
+                for _, v in pairs(workspace:GetDescendants()) do if v.Name == "DatVNMC_ESP_Fruit" then v:Destroy() end end
+            end
+
+            if _G.ChestESP then
+                for _, v in pairs(workspace:GetChildren()) do
+                    if string.find(v.Name, "Chest") and v:IsA("Part") then
+                        MakeESP(v, "Chest", Color3.fromRGB(255, 255, 0))
+                        local dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - v.Position).magnitude)
+                        v["DatVNMC_ESP_Chest"].TextLabel.Text = "💰 Chest [" .. dist .. "m]"
+                    end
+                end
+            else
+                for _, v in pairs(workspace:GetDescendants()) do if v.Name == "DatVNMC_ESP_Chest" then v:Destroy() end end
+            end
+
+            if _G.IslandESP then
+                for _, v in pairs(workspace._WorldOrigin.Locations:GetChildren()) do
+                    MakeESP(v, "Island", Color3.fromRGB(0, 255, 255))
+                    local dist = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - v.Position).magnitude)
+                    v["DatVNMC_ESP_Island"].TextLabel.Text = "🏝️ " .. v.Name .. " [" .. dist .. "m]"
+                end
+            else
+                for _, v in pairs(workspace._WorldOrigin.Locations:GetDescendants()) do if v.Name == "DatVNMC_ESP_Island" then v:Destroy() end end
+            end
+        end)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        pcall(function()
+            if _G.TweenMirage then
+                local mirage = workspace:FindFirstChild("Mirage Island") or workspace._WorldOrigin.Locations:FindFirstChild("Mirage Island")
+                if mirage then ToTween(mirage.CFrame * CFrame.new(0, 100, 0)) end
+            end
+            if _G.AutoLookMoon and workspace:FindFirstChild("Mirage Island") then
+                local moon = Lighting:FindFirstChild("Moon") or workspace:FindFirstChild("Moon")
+                if moon then workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, Vector3.new(0, 5000, 0)) end
+            end
+            if _G.AutoPickupGear then
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if (v.Name == "Gear" or v.Name == "MysteriousGear") and v:IsA("BasePart") then
+                        ToTween(v.CFrame)
+                        fireclickdetector(v:FindFirstChildOfClass("ClickDetector"))
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+Window:SelectTab(1)

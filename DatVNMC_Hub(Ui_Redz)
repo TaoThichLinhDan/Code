@@ -1,0 +1,293 @@
+-- [[ ĐỢI GAME LOAD HOÀN TOÀN ]] --
+if not game:IsLoaded() then game.Loaded:Wait() end
+repeat task.wait() until game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Character
+
+-- [[ TẢI THƯ VIỆN UI PHONG CÁCH REDZ HUB (KAVO LIBRARY) ]] --
+local Kavo = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+
+-- CẬP NHẬT TÊN SCRIPT VÀ SUBTITLE THEO YÊU CẦU
+local Window = Kavo.CreateLib("DatVNMCHub(Ui_RedzHub)", "DarkTheme")
+local SubtitleSection = Window:NewTab("Thông Tin Hub")
+local InfoSec = SubtitleSection:NewSection("By DatVNMC")
+InfoSec:NewLabel("Like And Subscriber Cho DatVNMC ❤️")
+
+-- ====================================================================
+-- [CẤU HÌNH BIẾN TOÀN CỤC - TOGGLES]
+-- ====================================================================
+_G.AutoFarmLevel = false
+_G.AutoAttack = false
+_G.BringMob = false
+_G.KillAuraDragonStorm = false
+_G.AntiAFK = true
+
+_G.AutoBuyChip = false
+_G.AutoStartRaid = false
+_G.AutoKillAuraRaid = false
+_G.AutoNextIslandRaid = false
+
+_G.SpeedHack = false
+_G.SpeedValue = 16
+_G.WalkOnWater = false
+
+_G.AutoSeaEvent = false
+_G.AutoAttackSea = false
+_G.AutoSitBoat = false
+_G.FlyToRoughSea = false
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
+
+-- ====================================================================
+-- [HÀM DỊCH CHUYỂN TWEEN MƯỢT]
+-- ====================================================================
+function ToTween(pos)
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    local distance = (pos.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+    local speed = 300
+    local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+    local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, tweenInfo, {CFrame = pos})
+    tween:Play()
+    return tween
+end
+
+-- ====================================================================
+-- [KHỞI TẠO CÁC MỤC MENU PHONG CÁCH REDZ]
+-- ====================================================================
+
+-- TABS
+local MainTab = Window:NewTab("Auto Farm")
+local DungeonTab = Window:NewTab("Dungeon/Raid")
+local SeaTab = Window:NewTab("Sea Events")
+local CombatTab = Window:NewTab("Combat/Misc")
+
+-- SECTIONS
+local FarmSection = MainTab:NewSection("Hệ Thống Farm Cấp & Aura")
+local RaidSection = DungeonTab:NewSection("Quản Lý Raid Dungeon")
+local SeaSection = SeaTab:NewSection("Săn Sự Kiện Biển")
+local CombatSection = CombatTab:NewSection("Hỗ Trợ Di Chuyển & PvP")
+
+-- ----------------------------------------
+-- [TAB AUTO FARM]
+-- ----------------------------------------
+FarmSection:NewToggle("Auto Farm Level (All Seas)", "Tự động nhận nhiệm vụ và farm quái", function(state)
+    _G.AutoFarmLevel = state
+    _G.AutoAttack = state
+    _G.BringMob = state
+end)
+
+-- TÍNH NĂNG KILLAURA DRAGON STORM
+FarmSection:NewToggle("Kill Aura Dragon Storm (Auto Z)", "Tự động spam chiêu Z diện rộng của Rồng", function(state)
+    _G.KillAuraDragonStorm = state
+end)
+
+-- ----------------------------------------
+-- [TAB DUNGEON & RAID]
+-- ----------------------------------------
+RaidSection:NewToggle("Auto Mua Chip Raid (Flame)", "Tự mua chip tự động", function(state)
+    _G.AutoBuyChip = state
+end)
+
+RaidSection:NewToggle("Auto Bắt Đầu Raid", "Tự bấm nút khởi hành", function(state)
+    _G.AutoStartRaid = state
+end)
+
+RaidSection:NewToggle("Auto Dọn Quái Raid (Kill Aura)", "Gom và diệt quái trong phòng Raid", function(state)
+    _G.AutoKillAuraRaid = state
+end)
+
+RaidSection:NewToggle("Auto Sang Đảo Tiếp Theo", "Tự dịch chuyển khi qua tầng", function(state)
+    _G.AutoNextIslandRaid = state
+end)
+
+-- ----------------------------------------
+-- [TAB SEA EVENTS]
+-- ----------------------------------------
+SeaSection:NewToggle("Auto Sea Event (Terrorshark/Sea Beast)", "Tự tìm quái biển", function(state)
+    _G.AutoSeaEvent = state
+end)
+
+SeaSection:NewToggle("Auto Click Tấn Công Quái Biển", "Tự chém khi đứng trên thuyền", function(state)
+    _G.AutoAttackSea = state
+end)
+
+SeaSection:NewToggle("Auto Giữ Ghế Lái Thuyền", "Chống bị rơi khỏi thuyền", function(state)
+    _G.AutoSitBoat = state
+end)
+
+SeaSection:NewToggle("Auto Bay Ra Biển Động (Zone 6)", "Tự bay tìm vùng nguy hiểm", function(state)
+    _G.FlyToRoughSea = state
+end)
+
+-- ----------------------------------------
+-- [TAB COMBAT & MISC]
+-- ----------------------------------------
+CombatSection:NewSlider("Tốc Độ Chạy (Speed)", "Chỉnh tốc độ PvP", 100, 16, function(s)
+    _G.SpeedValue = s
+    _G.SpeedHack = true
+end)
+
+CombatSection:NewToggle("Đứng Trên Nước (Walk On Water)", "Chống chìm dưới biển", function(state)
+    _G.WalkOnWater = state
+    if state then
+        local waterFloor = Instance.new("Part")
+        waterFloor.Name = "Redz_WaterFloor"
+        waterFloor.Size = Vector3.new(50000, 2, 50000)
+        waterFloor.Position = Vector3.new(0, -2, 0)
+        waterFloor.Anchored = true
+        waterFloor.Transparency = 1
+        waterFloor.Parent = workspace
+    else
+        local floor = workspace:FindFirstChild("Redz_WaterFloor")
+        if floor then floor:Destroy() end
+    end
+end)
+
+CombatSection:NewButton("Xóa Đồ Họa (Giảm Lag FPS)", "Tối ưu hóa game mượt hơn", function()
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and not v:IsA("MeshPart") then v.Material = Enum.Material.SmoothPlastic v.Reflectance = 0
+        elseif v:IsA("Decal") or v:IsA("Texture") then v:Destroy() end
+    end
+    Lighting.GlobalShadows = false
+end)
+
+-- ====================================================================
+-- [CORE LOGIC ENGINES CHẠY NGẦM]
+-- ====================================================================
+
+-- LOGIC SPAM CHIÊU DRAGON STORM Z
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G.KillAuraDragonStorm then
+            pcall(function()
+                VirtualUser:SetKeyDown("z")
+                task.wait(0.1)
+                VirtualUser:SetUpKey("z")
+            end)
+        end
+    end
+end)
+
+-- LOGIC AUTO SEA EVENT
+task.spawn(function()
+    while true do
+        task.wait(0.2)
+        if _G.AutoSeaEvent then
+            pcall(function()
+                local TargetSeaMonster = nil
+                for _, v in pairs(workspace:GetChildren()) do
+                    if (v.Name == "Sea Beast" or v.Name == "Terrorshark" or string.find(v.Name, "Ship") or string.find(v.Name, "Shark")) and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                        TargetSeaMonster = v
+                        break
+                    end
+                end
+                if TargetSeaMonster then
+                    ToTween(TargetSeaMonster.HumanoidRootPart.CFrame * CFrame.new(0, 35, 0))
+                    if _G.AutoAttackSea then
+                        VirtualUser:CaptureController()
+                        VirtualUser:ClickButton1(Vector2.new(50, 50))
+                    end
+                else
+                    if _G.FlyToRoughSea then
+                        ToTween(CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position.X + 200, 45, LocalPlayer.Character.HumanoidRootPart.Position.Z + 200))
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- LOGIC AUTO NGỒI GHẾ LÁI
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if _G.AutoSitBoat then
+            pcall(function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") and LocalPlayer.Character.Humanoid.SeatPart == nil then
+                    for _, v in pairs(workspace:GetDescendants()) do
+                        if v:IsA("VehicleSeat") and (v.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 25 then
+                            v:Sit(LocalPlayer.Character.Humanoid)
+                            break
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- LOGIC FARM LEVEL GỐC
+local CurrentQuestName = ""
+local CurrentMobName = ""
+function CheckQuestAndMob()
+    local myLevel = LocalPlayer.Data.Level.Value
+    if myLevel >= 1 and myLevel < 15 then CurrentQuestName = "BanditQuest1" CurrentMobName = "Bandit"
+    elseif myLevel >= 15 and myLevel < 30 then CurrentQuestName = "MonkeyQuest1" CurrentMobName = "Monkey"
+    else CurrentQuestName = "BanditQuest1" CurrentMobName = "Bandit" end
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G.AutoFarmLevel then
+            pcall(function()
+                CheckQuestAndMob()
+                local hasQuest = LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") and LocalPlayer.PlayerGui.Main.Quest.Visible
+                if not hasQuest then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", CurrentQuestName, 1)
+                else
+                    local targetMob = nil
+                    for _, mob in pairs(workspace.Enemies:GetChildren()) do
+                        if mob.Name == CurrentMobName and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                            targetMob = mob
+                            break
+                        end
+                    end
+                    if targetMob and targetMob:FindFirstChild("HumanoidRootPart") then
+                        ToTween(targetMob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                        if _G.AutoAttack then
+                            VirtualUser:CaptureController()
+                            VirtualUser:ClickButton1(Vector2.new(50, 50))
+                        end
+                        if _G.BringMob then
+                            for _, otherMob in pairs(workspace.Enemies:GetChildren()) do
+                                if otherMob.Name == CurrentMobName and otherMob ~= targetMob and otherMob:FindFirstChild("HumanoidRootPart") then
+                                    otherMob.HumanoidRootPart.CFrame = targetMob.HumanoidRootPart.CFrame
+                                    otherMob.HumanoidRootPart.CanCollide = false
+                                end
+                            end
+                        end
+                    else
+                        for _, spawnPoint in pairs(workspace._WorldOrigin.EnemySpawns:GetChildren()) do
+                            if string.find(spawnPoint.Name, CurrentMobName) then
+                                ToTween(spawnPoint.CFrame * CFrame.new(0, 20, 0))
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- HỆ THỐNG ĐIỀU TỐC
+RunService.RenderStepped:Connect(function()
+    if _G.SpeedHack and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = _G.SpeedValue
+    end
+end)
+
+-- ANTI AFK
+if _G.AntiAFK then
+    LocalPlayer.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end)
+end

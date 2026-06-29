@@ -1,3 +1,8 @@
+-- Thay thế đoạn load thư viện cũ bằng đoạn này:
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
 -- [[ DATVNMC HUB - QUANTUM ONYX STYLE EDITION 2026 ]] --
 
 local DatVNMC_ImageID = "rbxassetid://108529748091064"
